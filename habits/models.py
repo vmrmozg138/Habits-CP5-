@@ -76,3 +76,21 @@ class Habit(models.Model):
 
     def __str__(self):
         return self.name
+
+class Reminder(models.Model):
+    habit = models.ForeignKey(Habit, on_delete=models.CASCADE, verbose_name="Привычка")
+    execution_at = models.DateTimeField(verbose_name="Время выполнения")
+    reminder_at = models.DateTimeField(verbose_name="Время отправки уведомления")
+
+    sent_at = models.DateTimeField(verbose_name="Фактическое время отправки", null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["habit", "execution_at"],
+                name="unique_habit_execution_reminder"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.habit.name} (отправлено: {self.sent_at is not None})"
