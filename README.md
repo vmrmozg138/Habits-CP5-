@@ -47,7 +47,7 @@ Linux / macOS:
 
 ### 3. Установить зависимости
 
-`pip install -r requirements.txt`
+`poetry install`
 
 ### 4. Настроить переменные окружения
 
