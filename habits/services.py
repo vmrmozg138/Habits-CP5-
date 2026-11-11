@@ -1,26 +1,28 @@
+import logging
 from datetime import timedelta
+
 import requests
-from  config import settings
-from .models import Habit, Reminder
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 def send_tg_message(chat_id, message):
-    params = {
-        'chat_id': chat_id,
-        'text': message
-    }
+    params = {"chat_id": chat_id, "text": message}
 
-    response = requests.get(
-        f'{settings.TG_URL}{settings.TG_BOT_TOKEN}/sendMessage',
-        params=params,
-        timeout=10
-    )
-    '''
-    print(response.status_code)
-    print(response.json())'''
-    data = response.json()
+    try:
+        response = requests.get(
+            f"{settings.TG_URL}{settings.TG_BOT_TOKEN}/sendMessage",
+            params=params,
+            timeout=10,
+        )
+        response.raise_for_status()
+        data = response.json()
+    except (requests.RequestException, ValueError) as error:
+        logger.warning("Ошибка отправки сообщения в Telegram: %s", error)
+        return False
 
-    return response.status_code == 200 and data.get('ok') is True
+    return data.get("ok") is True
 
 
 def get_next_execution(execute_at, periodicity, now):

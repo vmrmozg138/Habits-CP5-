@@ -82,5 +82,3 @@ Linux / macOS:
 `coverage run manage.py test`
 
 `coverage report`
-
-Общее покрытие кода проекта — 95%.

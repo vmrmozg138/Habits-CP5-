@@ -1,16 +1,14 @@
-from django.core.validators import MinValueValidator, MaxValueValidator
-from django.db import models
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+
 from users.models import User
 
 
 class Habit(models.Model):
     name = models.CharField(max_length=100, verbose_name="Имя/наименование")
     owner = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="habits",
-        verbose_name="Владелец"
+        User, on_delete=models.CASCADE, related_name="habits", verbose_name="Владелец"
     )
     place = models.CharField(verbose_name="Место", max_length=255)
     execute_at = models.DateTimeField(verbose_name="Время выполнения")
@@ -36,9 +34,7 @@ class Habit(models.Model):
     )
 
     remuneration = models.CharField(
-        max_length=255,
-        verbose_name="Вознаграждение",
-        blank=True
+        max_length=255, verbose_name="Вознаграждение", blank=True
     )
     execution_time = models.PositiveIntegerField(
         verbose_name="Время на выполнение",
@@ -65,9 +61,7 @@ class Habit(models.Model):
             )
         """привычка не должна ссылаться на саму себя"""
         if self.related_habit and self.related_habit == self:
-            raise ValidationError(
-                "Привычка не может ссылаться сама на себя"
-            )
+            raise ValidationError("Привычка не может ссылаться сама на себя")
         """связанная привычка должна принадлежать тому же владельцу"""
         if self.related_habit and self.related_habit.owner != self.owner:
             raise ValidationError(
@@ -77,18 +71,20 @@ class Habit(models.Model):
     def __str__(self):
         return self.name
 
+
 class Reminder(models.Model):
     habit = models.ForeignKey(Habit, on_delete=models.CASCADE, verbose_name="Привычка")
     execution_at = models.DateTimeField(verbose_name="Время выполнения")
     reminder_at = models.DateTimeField(verbose_name="Время отправки уведомления")
 
-    sent_at = models.DateTimeField(verbose_name="Фактическое время отправки", null=True, blank=True)
+    sent_at = models.DateTimeField(
+        verbose_name="Фактическое время отправки", null=True, blank=True
+    )
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["habit", "execution_at"],
-                name="unique_habit_execution_reminder"
+                fields=["habit", "execution_at"], name="unique_habit_execution_reminder"
             )
         ]
 

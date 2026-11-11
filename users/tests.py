@@ -1,12 +1,13 @@
-from django.test import TestCase
-from users.models import User
 from django.db import IntegrityError, transaction
+from django.test import TestCase
+
+from users.models import User
+
 
 class UserModelTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            email="test@example.com",
-            password="testpassword123"
+            email="test@example.com", password="testpassword123"
         )
 
     def test_user_creation(self):
@@ -14,8 +15,7 @@ class UserModelTestCase(TestCase):
         self.assertEqual(self.user.email, "test@example.com")
 
     def test_user_password(self):
-        self.assertNotEqual(
-            self.user.password, "testpassword123" )
+        self.assertNotEqual(self.user.password, "testpassword123")
         self.assertTrue(self.user.check_password("testpassword123"))
 
     def test_user_without_email(self):

@@ -1,11 +1,15 @@
 from django.urls import path
-from rest_framework.urls import app_name
 
-from .views import RegisterAPIView
 from .apps import UsersConfig
+from .views import RegisterAPIView, TelegramChatIdUpdateAPIView
 
 app_name = UsersConfig.name
 
 urlpatterns = [
-    path('register/', RegisterAPIView.as_view(), name='register'),
+    path("register/", RegisterAPIView.as_view(), name="register"),
+    path(
+        "telegram/",
+        TelegramChatIdUpdateAPIView.as_view(),
+        name="telegram_update",
+    ),
 ]
