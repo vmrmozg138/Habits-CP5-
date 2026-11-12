@@ -7,6 +7,8 @@ class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("Пользователь должен иметь email")
+        if not password:
+            raise ValueError("Пользователь должен иметь пароль")
 
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
@@ -53,6 +55,14 @@ class User(AbstractUser):
         help_text="Загрузите аватар",
         null=True,
         blank=True,
+    )
+
+    tg_chat_id = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        verbose_name="Телеграм chat_id",
+        help_text="Укажите телеграм chat_id",
     )
 
     objects = UserManager()
