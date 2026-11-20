@@ -56,8 +56,6 @@ jobs:
       - name: Run Django tests
         run: poetry run python manage.py test
 
-  lint:
-
-  build:
-
-  deploy:
+#  lint:
+#  build:
+#  deploy:
