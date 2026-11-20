@@ -3,9 +3,10 @@ name: CI/CD
 on:
   push:
     branches:
-      -
+      - "f*"
   pull_request:
     branches:
+      - develop
 
 
 jobs:
