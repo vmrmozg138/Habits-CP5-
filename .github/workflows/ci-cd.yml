@@ -1,0 +1,62 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      -
+  pull_request:
+    branches:
+
+
+jobs:
+  tests:
+    name: Django tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: project_db
+          POSTGRES_USER: project_user
+          POSTGRES_PASSWORD: test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U project_user -d project_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      SECRET_KEY: test-secret-key
+      DEBUG: "False"
+      DOCKER_ENV: "True"
+      DB_NAME: project_db
+      DB_USER: project_user
+      DB_PASSWORD: test-password
+      DB_HOST: localhost
+      DB_PORT: 5432
+      CELERY_BROKER_URL: memory://
+      CELERY_RESULT_BACKEND: cache+memory://
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install --with dev --no-root
+
+      - name: Run Django tests
+        run: poetry run python manage.py test
+
+  lint:
+
+  build:
+
+  deploy:
