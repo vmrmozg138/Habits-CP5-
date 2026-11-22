@@ -54,3 +54,31 @@ jobs:
 
       - name: Run Django tests
         run: poetry run python manage.py test
+  lint:
+    name: Code quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install --with dev --no-root
+
+      - name: Run Flake8
+        run: poetry run flake8 .
+
+      - name: Check Black formatting
+        run: poetry run black --check .
+
+      - name: Check import sorting
+        run: poetry run isort --check-only .
+
