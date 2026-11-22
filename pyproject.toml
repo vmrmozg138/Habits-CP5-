@@ -19,6 +19,8 @@ redis = "^8.1.0"
 python-dotenv = "^1.2.4"
 django-celery-beat = "^2.9.0"
 requests = "^2.34.2"
+psycopg = {extras = ["binary"], version = "^3.3.9"}
+gunicorn = "^27.0.1"
 
 
 [build-system]

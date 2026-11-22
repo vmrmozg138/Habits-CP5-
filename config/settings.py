@@ -20,7 +20,11 @@ DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY не задан в .env")
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "web",
+]
 
 
 # Application definition
@@ -101,12 +105,24 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+if DEBUG:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("DB_NAME"),
+            "USER": os.getenv("DB_USER"),
+            "PASSWORD": os.getenv("DB_PASSWORD"),
+            "HOST": os.getenv("DB_HOST", "db"),
+            "PORT": os.getenv("DB_PORT", "5432"),
+        }
+    }
 
 
 # Password validation
@@ -157,8 +173,12 @@ MAILERS = {
 TG_URL = "https://api.telegram.org/bot"
 TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
 
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
-CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
+if os.getenv("DOCKER_ENV", "False").lower() == "true":
+    CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
+    CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
+else:
+    CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL_DEBUG")
+    CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND_DEBUG")
 
 # Часовой пояс для работы Celery
 CELERY_TIMEZONE = TIME_ZONE
@@ -168,8 +188,6 @@ CELERY_TASK_TRACK_STARTED = True
 
 # Максимальное время на выполнение задачи
 CELERY_TASK_TIME_LIMIT = 30 * 60
-
-CELERY_TIMEZONE = "UTC"
 
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
@@ -191,3 +209,5 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute="*/5"),
     },
 }
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
