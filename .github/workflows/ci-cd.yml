@@ -1,0 +1,137 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - f3/ci_cd
+      - develop
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  tests:
+    name: Django tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: project_db
+          POSTGRES_USER: project_user
+          POSTGRES_PASSWORD: test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U project_user -d project_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      SECRET_KEY: test-secret-key
+      DEBUG: "False"
+      DOCKER_ENV: "True"
+      DB_NAME: project_db
+      DB_USER: project_user
+      DB_PASSWORD: test-password
+      DB_HOST: localhost
+      DB_PORT: 5432
+      CELERY_BROKER_URL: memory://
+      CELERY_RESULT_BACKEND: cache+memory://
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install --with dev --no-root
+
+      - name: Run Django tests
+        run: poetry run python manage.py test
+  lint:
+    name: Code quality
+    runs-on: ubuntu-latest
+    needs: tests
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install --with dev --no-root
+
+      - name: Run Flake8
+        run: poetry run flake8 .
+
+      - name: Check Black formatting
+        run: poetry run black --check .
+
+      - name: Check import sorting
+        run: poetry run isort --check-only .
+  build:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    needs:
+      - tests
+      - lint
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: habits-app:latest
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs:
+      - tests
+      - lint
+      - build
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/f3/ci_cd' || github.ref == 'refs/heads/develop')
+
+    steps:
+      - name: Deploy through SSH
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          
+          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          
+          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts
+          
+          ssh -i ~/.ssh/id_ed25519 \
+            -o IdentitiesOnly=yes \
+            "$SERVER_USER@$SERVER_HOST" \
+            'cd ~/habits_cp5 && \
+             git fetch origin f3/ci_cd && \
+             git reset --hard origin/f3/ci_cd && \
+             docker compose up -d --build'
