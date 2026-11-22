@@ -57,6 +57,7 @@ jobs:
   lint:
     name: Code quality
     runs-on: ubuntu-latest
+    needs: tests
 
     steps:
       - name: Checkout repository
@@ -84,6 +85,9 @@ jobs:
   build:
     name: Build Docker image
     runs-on: ubuntu-latest
+    needs:
+      - tests
+      - lint
 
     steps:
       - name: Checkout repository
@@ -99,3 +103,34 @@ jobs:
           file: ./Dockerfile
           push: false
           tags: habits-app:latest
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs:
+      - tests
+      - lint
+      - build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/f3/ci_cd'
+
+    steps:
+      - name: Deploy through SSH
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          
+          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          
+          ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts
+          
+          ssh -i ~/.ssh/id_ed25519 \
+            -o IdentitiesOnly=yes \
+            "$SERVER_USER@$SERVER_HOST" \
+            'cd ~/habits_cp5 && \
+             git fetch origin f3/ci_cd && \
+             git reset --hard origin/f3/ci_cd && \
+             docker compose up -d --build'
