@@ -3,7 +3,8 @@ name: CI/CD
 on:
   push:
     branches:
-      - "f3/ci_cd"
+      - f3/ci_cd
+      - develop
   pull_request:
     branches:
       - develop
@@ -110,7 +111,7 @@ jobs:
       - tests
       - lint
       - build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/f3/ci_cd'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/f3/ci_cd' || github.ref == 'refs/heads/develop')
 
     steps:
       - name: Deploy through SSH
